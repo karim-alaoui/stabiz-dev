@@ -1,0 +1,17 @@
+{
+    "data": {
+        "id": 1,
+        "first_name": "Jewell",
+        "last_name": "Gottlieb",
+        "email": "koushik355@gmail.com",
+        "income": {
+            "id": 11,
+            "lower_limit": 501,
+            "upper_limit": 550,
+            "unit": "thousand",
+            "currency": "yen"
+        },
+        "type": null,
+        "created_at": "2021-06-14T10:44:44.000000Z"
+    }
+}
