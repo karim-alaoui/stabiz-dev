@@ -23,6 +23,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\Area;
 use App\Models\Industry;
+use App\Models\FounderProfile;
 use App\Traits\RelationshipTrait;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -201,11 +202,12 @@ class UserController extends BaseApiController
             return response()->json(['message' => 'User is not an entrepreneur'], 403);
         }
 
-        $founders = User::where('type', User::FOUNDER)
-            ->with('fdrProfile')
+        $founderProfiles = FounderProfile::select('id', 'company_name', 'no_of_employees', 'is_listed_company', 'area_id')
+            ->with(['area:id,name_ja', 'industries:id,name'])
             ->get();
-    
-        return $founders;
+
+        return $founderProfiles;
+
     }
     
 }

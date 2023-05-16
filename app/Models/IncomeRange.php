@@ -22,9 +22,4 @@ class IncomeRange extends Model
     protected $hidden = ['deleted_at'];
 
     public $timestamps = false;
-
-    public function users()
-{
-    return $this->hasMany(User::class, 'income_range_id');
-}
 }

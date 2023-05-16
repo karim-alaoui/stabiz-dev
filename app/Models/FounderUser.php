@@ -28,9 +28,4 @@ class FounderUser extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-
-    public function founderProfile()
-    {
-        return $this->belongsTo(FounderProfile::class, 'founder_id');
-    }
 }

@@ -138,12 +138,22 @@ class User extends Authenticatable
             ->with(self::entrProfileRelations());
     }
 
-    public function fdrProfile()
+    /**
+     * Founder profile for founder type user
+     * @return HasOne
+     */
+    public function fdrProfile(): HasOne
     {
-        return $this->belongsToMany(FounderProfile::class, 'founder_user', 'user_id', 'founder_id');
+        return $this->hasOne(FounderProfile::class, 'user_id')->withDefault();
     }
 
-    public function fdrProfileWithRelations()
+
+    /**
+     * Load founder profile with relations
+     * @return HasOne
+     * @noinspection PhpUnused
+     */
+    public function fdrProfileWithRelations(): HasOne
     {
         return $this->fdrProfile()
             ->with(self::fdrProfileRelations());
