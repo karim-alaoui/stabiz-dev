@@ -42,11 +42,11 @@ Route::prefix('v1')->group(function () {
     Route::post('login/fdr', [AuthController::class, 'loginFdr']);
     
 //    Route::post('login', [AuthController::class, 'login'])->name('login.user');
-    Route::post('login/staff', [AuthStaffController::class, 'login'])->name('login');
+    Route::post('login/staff', [AuthStaffController::class, 'login']);
 
     Route::post('register/organizer', [OrganizerController::class, 'registerOrganizer']);
-    Route::post('resend-confirmation-code', [OrganizerController::class, 'resendConfirmationCode'])->name('organizers.resend-confirmation-code');
-    Route::post('verify-confirmation-code', [OrganizerController::class, 'verifyConfirmationCode'])->name('organizers.verify-confirmation-code');
+    Route::post('resend-confirmation-code', [OrganizerController::class, 'resendConfirmationCode']);
+    Route::post('verify-confirmation-code', [OrganizerController::class, 'verifyConfirmationCode']);
     Route::post('organizer/login', [OrganizerController::class, 'login']);
     Route::post('organizer/forget-password', [OrganizerController::class, 'sendPasswordResetCode']);
     Route::post('organizer/reset-password', [OrganizerController::class, 'resetPassword']);
@@ -103,7 +103,7 @@ Route::prefix('v1')->group(function () {
         Route::put('user/entrepreneur', [UserController::class, 'updateEntr']);
         Route::put('user/fdr', [UserController::class, 'updateFdr']);
         Route::patch('user/update-password', [UserController::class, 'updatePass']);
-        Route::post('logout/user/{logout_everywhere?}', [AuthController::class, 'logout'])->name('logout');
+        Route::post('logout/user/{logout_everywhere?}', [AuthController::class, 'logout']);
         Route::post('/update-dp', [UserController::class, 'updateDP']);
         Route::post('/update-company-imgs', [UserController::class, 'updateCompanyImgs']);
 
@@ -136,7 +136,7 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware('auth:api-staff')->group(function () {
-        Route::post('logout/staff/{logout_everywhere?}', [AuthController::class, 'logout'])->name('logout');
+        Route::post('logout/staff/{logout_everywhere?}', [AuthController::class, 'logout']);
         Route::get('staff/authenticated', [StaffController::class, 'staff']);
         Route::patch('staff/password/{staff}', [StaffController::class, 'updatePass']);
         Route::apiResource('staff', StaffController::class)->only(['index', 'store', 'update', 'destroy']);
