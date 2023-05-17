@@ -38,8 +38,8 @@ use Illuminate\Support\Facades\Mail;
 Route::prefix('v1')->group(function () {
     Route::post('otp-send', [AuthController::class, 'sendOTP']);
     Route::post('otp-verify', [AuthController::class, 'verifyOTP']);
-    Route::post('login/entr', [AuthController::class, 'loginEntr'])->name('login');
-    Route::post('login/fdr', [AuthController::class, 'loginFdr'])->name('login');
+    Route::post('login/entr', [AuthController::class, 'loginEntr']);
+    Route::post('login/fdr', [AuthController::class, 'loginFdr']);
     
 //    Route::post('login', [AuthController::class, 'login'])->name('login.user');
     Route::post('login/staff', [AuthStaffController::class, 'login'])->name('login');
@@ -50,8 +50,6 @@ Route::prefix('v1')->group(function () {
     Route::post('organizer/login', [OrganizerController::class, 'login']);
     Route::post('organizer/forget-password', [OrganizerController::class, 'sendPasswordResetCode']);
     Route::post('organizer/reset-password', [OrganizerController::class, 'resetPassword']);
-
-
 
     Route::post('register/{type}', [AuthController::class, 'register']);
     Route::post('forget-password', [AuthController::class, 'forgetPassword'])
