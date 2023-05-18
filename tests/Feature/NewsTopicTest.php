@@ -86,7 +86,7 @@ class NewsTopicTest extends AppBaseTestCase
     public function test_pass_create_news_topic()
     {
         $data = $this->data();
-        $data['visible_to'] = 'others'; // Add the visible_to field with a valid value
+        $data['visible_to'] = ['others']; // Add the visible_to field with a valid value
 
         $staff = $this->staff();
 
