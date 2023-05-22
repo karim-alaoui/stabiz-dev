@@ -260,7 +260,7 @@ class StaffController extends BaseApiController
 
         return response()->json($organizer);
     }
-    public function getOrganizerFounderProfiles(Request $request, $userId)
+    public function getOrganizerFounderProfiles(Request $request, $userId) 
     {
         $organizerId = $userId;
 
