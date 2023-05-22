@@ -20,6 +20,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 
+use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\FounderUser;
+use App\Models\FounderProfile;
+use App\Models\Organizer;
+use Illuminate\Support\Facades\Auth;
+
 /**
  * @group Staff
  */
@@ -132,5 +139,135 @@ class StaffController extends BaseApiController
         Gate::authorize('');
         $staff->delete();
         return $this->noContent();
+    }
+    public function getFounderUsersByFounderProfile(Request $request, $id)
+    {
+        // Get the FounderProfile by its ID
+        $founderProfile = FounderProfile::find($id);
+        if (!$founderProfile) {
+            return response()->json(['message' => 'Founder profile not found'], 404);
+        }
+
+        // Get the FounderUsers belonging to this FounderProfile
+        $founderUsers = FounderUser::where('founder_id', $founderProfile->id)->get();
+
+        // Get the User details for each FounderUser
+        $founderUsersDetails = [];
+
+        foreach ($founderUsers as $founderUser) {
+            $user = User::find($founderUser->user_id);
+
+            $founderUsersDetails[] = [
+                'id' => $founderUser->id,
+                'role' => $founderUser->role,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'email' => $user->email,
+            ];
+        }
+        // Return the FounderUsers details
+        return response()->json(['founder_users' => $founderUsersDetails]);
+    }
+    public function createFounderUser(Request $request)
+    {
+        $founderId = $request->input('founder_id');
+        $firstName = $request->input('first_name');
+        $lastName = $request->input('last_name');
+        $email = $request->input('email');
+        $password = $request->input('password');
+        $role = $request->input('role');
+    
+        // Check if the user already exists
+        $existingUser = User::where('email', $email)->first();
+        if ($existingUser) {
+            return response()->json(['message' => 'User already exists'], 400);
+        }
+
+        // Create a new user
+        try {
+            $user = new User();
+            $user->first_name = $firstName;
+            $user->last_name = $lastName;
+            $user->email = $email;
+            $user->type = 'founder';
+            $user->password = Hash::make($password);
+            $user->save();
+        }catch (\Throwable $th) {
+            // Handle any errors with creating the user
+        }
+        // Store the founder user ID, founder ID, and role of founder user in the new table
+        $founderUser = new FounderUser();
+        $founderUser->founder_id = $founderId;
+        $founderUser->user_id = $user->id;
+        $founderUser->role = $role;
+        $founderUser->save();
+    
+        // Return a response indicating that the founder user was created successfully
+        return response()->json(['message' => 'Founder user created successfully']);
+    }
+    public function getFounderUserDetails($userId)
+    {
+        $founderUser = FounderUser::where('user_id', $userId)->first();
+
+        if (!$founderUser) {
+            return response()->json(['message' => 'Founder user not found'], 404);
+        }
+
+        $user = $founderUser->user;
+
+        return response()->json([
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'email' => $user->email,
+            'role' => $founderUser->role,
+        ]);
+    }
+    public function updateFounderUser(Request $request, $userId)
+    {
+        // Find the founder user by ID
+        $founderUser = FounderUser::where('user_id', $userId)->first();
+    
+        // Check if the founder user exists
+        if (!$founderUser) {
+            return response()->json(['message' => 'Founder user not found'], 404);
+        }
+    
+        // Fill the founder user with the request data
+        $founderUser->fill($request->all());
+        $founderUser->save();
+
+        $user = User::find($founderUser->user_id);
+        if ($user) {
+            $user->fill($request->only(['first_name', 'last_name', 'email']));
+            $password = $request->input('password');
+            if ($password) {
+                $user->password = Hash::make($password);
+            }
+            $user->save();
+        }
+        // Return a response indicating that the founder user was updated successfully
+        return response()->json(['message' => 'Founder user updated successfully']);
+    }
+    public function getOrganizers()
+    {
+        $organizers = Organizer::all();
+
+        return response()->json($organizers);
+    }
+    public function indexOrganizerProfile(Request $request, $userId)
+    {
+        $organizer = Organizer::findOrFail($userId);
+
+        return response()->json($organizer);
+    }
+    public function getOrganizerFounderProfiles(Request $request, $userId)
+    {
+        $organizerId = $userId;
+
+        $founderProfiles = FounderProfile::where('user_id', $organizerId)
+            ->with(['area', 'prefecture', 'offeredIncome'])
+            ->get();
+    
+        return response()->json($founderProfiles);
     }
 }

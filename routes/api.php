@@ -38,11 +38,11 @@ use Illuminate\Support\Facades\Mail;
 Route::prefix('v1')->group(function () {
     Route::post('otp-send', [AuthController::class, 'sendOTP']);
     Route::post('otp-verify', [AuthController::class, 'verifyOTP']);
-    Route::post('login/entr', [AuthController::class, 'loginEntr']);
-    Route::post('login/fdr', [AuthController::class, 'loginFdr']);
+    Route::post('login/entr', [AuthController::class, 'loginEntr'])->name('login.user_entr');
+    Route::post('login/fdr', [AuthController::class, 'loginFdr'])->name('login.user_fdr');
     
 //    Route::post('login', [AuthController::class, 'login'])->name('login.user');
-    Route::post('login/staff', [AuthStaffController::class, 'login']);
+    Route::post('login/staff', [AuthStaffController::class, 'login'])->name('login.staff');
 
     Route::post('register/organizer', [OrganizerController::class, 'registerOrganizer']);
     Route::post('resend-confirmation-code', [OrganizerController::class, 'resendConfirmationCode']);
@@ -103,12 +103,14 @@ Route::prefix('v1')->group(function () {
         Route::put('user/entrepreneur', [UserController::class, 'updateEntr']);
         Route::put('user/fdr', [UserController::class, 'updateFdr']);
         Route::patch('user/update-password', [UserController::class, 'updatePass']);
-        Route::post('logout/user/{logout_everywhere?}', [AuthController::class, 'logout']);
+        Route::post('logout/user/{logout_everywhere?}', [AuthController::class, 'logout'])->name('logout');
         Route::post('/update-dp', [UserController::class, 'updateDP']);
         Route::post('/update-company-imgs', [UserController::class, 'updateCompanyImgs']);
 
         Route::get('entrepreneurs', [UserController::class, 'getEntrepreneursList']);
         Route::get('founders', [UserController::class, 'getFoundersList']);
+        Route::get('entrepreneurs/{id}', [UserController::class, 'getEntrepreneurDetails']);
+        Route::get('founders/{id}', [UserController::class, 'getFounderProfileDetails']);
 
         // search founders can be done by entrepreneurs
         Route::get('/search-fdr', [SearchController::class, 'searchFdr']);
@@ -136,7 +138,7 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware('auth:api-staff')->group(function () {
-        Route::post('logout/staff/{logout_everywhere?}', [AuthController::class, 'logout']);
+        Route::post('logout/staff/{logout_everywhere?}', [AuthController::class, 'logout'])->name('logout');
         Route::get('staff/authenticated', [StaffController::class, 'staff']);
         Route::patch('staff/password/{staff}', [StaffController::class, 'updatePass']);
         Route::apiResource('staff', StaffController::class)->only(['index', 'store', 'update', 'destroy']);
@@ -157,6 +159,15 @@ Route::prefix('v1')->group(function () {
         Route::post('docs/verify', [UploadDocController::class, 'verify']);
         Route::get('recommended-users/{user}', [RecommendController::class, 'accessRcmdListOfUser']);
         Route::delete('recommended-users/{user}/{removeUser}', [RecommendController::class, 'removeFromRcmdLst']);
+
+        Route::get('staff/founder-profiles/{id}/founder-users', [StaffController::class, 'getFounderUsersByFounderProfile']);
+        Route::post('staff/founder-users', [StaffController::class, 'createFounderUser']);
+        Route::get('staff/founder-users/{userId}', [StaffController::class, 'getFounderUserDetails']);
+        Route::put('staff/founder-users/{userId}', [StaffController::class, 'updateFounderUser']);
+        Route::get('staff/organizers', [StaffController::class, 'getOrganizers']);
+        Route::get('staff/organizers/{userId}', [StaffController::class, 'indexOrganizerProfile']);
+        Route::get('staff/organizers/{userId}/founder-profiles',  [StaffController::class, 'getOrganizerFounderProfiles']);
+
     });
 
     Route::middleware(['auth:api'])->group(function () {

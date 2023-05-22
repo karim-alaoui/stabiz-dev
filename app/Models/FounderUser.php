@@ -28,4 +28,14 @@ class FounderUser extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($founderUser) {
+            if (!in_array($founderUser->role, ['readwrite', 'readonly', 'expired'])) {
+                throw new \Exception('Invalid role value.');
+            }
+        });
+    }
 }

@@ -24,6 +24,7 @@ use App\Models\User;
 use App\Models\Area;
 use App\Models\Industry;
 use App\Models\FounderProfile;
+use App\Models\Application;
 use App\Traits\RelationshipTrait;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -190,6 +191,7 @@ class UserController extends BaseApiController
             }, 'entrProfile.area:id,name_ja', 'entrProfile.industriesPfd:id,name', 'entrProfile.positionsPfd:id,name'])
             ->join('income_ranges', 'users.income_range_id', '=', 'income_ranges.id')
             ->select('users.id', 'users.first_name', 'income_ranges.upper_limit', DB::raw("date_part('year',age(users.dob)) AS age"))
+            ->orderBy('users.created_at', 'desc')
             ->get();
 
         return response()->json($entrepreneurs);
@@ -204,10 +206,75 @@ class UserController extends BaseApiController
 
         $founderProfiles = FounderProfile::select('id', 'company_name', 'no_of_employees', 'is_listed_company', 'area_id')
             ->with(['area:id,name_ja', 'industries:id,name'])
+            ->orderBy('created_at', 'desc')
             ->get();
 
         return $founderProfiles;
 
     }
-    
+    public function getFounderProfileDetails($id)
+    {
+        $authUser = auth()->user();
+
+        $founderProfile = FounderProfile::find($id);
+
+        if (!$founderProfile) {
+            return response()->json(['message' => 'Founder profile not found'], 404);
+        }
+
+        // Check if the logged-in user is friends with the founder
+        $isFriend = Application::where('accepted_at', '!=', null)
+            ->where(function ($query) use ($authUser, $founderProfile) {
+                $query->where('applied_to_user_id', $authUser->id)
+                    ->where('applied_by_user_id', $founderProfile->id);
+            })
+            ->orWhere(function ($query) use ($authUser, $founderProfile) {
+                $query->where('applied_to_user_id', $founderProfile->id)
+                    ->where('applied_by_user_id', $authUser->id);
+            })
+            ->exists();
+
+        if (!$isFriend) {
+            // Treatment if they are not friends
+            // For example, return an error response
+        }
+
+        return new FounderProfileResource($founderProfile);
+    }
+
+    public function getEntrepreneurDetails($id)
+    {
+        $authUser = auth()->user();
+        
+        $founderProfile = FounderProfile::join('founder_user', 'founder_profiles.id', '=', 'founder_user.founder_id')
+            ->where('founder_user.user_id', $authUser->id)
+            ->first();
+
+        if (!$founderProfile) {
+            return response()->json(['message' => 'Founder profile not found'], 404);
+        }
+
+        $entrepreneur = User::findOrFail($id);
+
+        // Check if the logged-in user is friends with the entrepreneur
+        $isFriend = Application::where('accepted_at', '!=', null)
+            ->where(function ($query) use ($founderProfile, $entrepreneur) {
+                $query->where('applied_to_user_id', $founderProfile->id)
+                    ->where('applied_by_user_id', $entrepreneur->id);
+            })
+            ->orWhere(function ($query) use ($founderProfile, $entrepreneur) {
+                $query->where('applied_to_user_id', $entrepreneur->id)
+                    ->where('applied_by_user_id', $founderProfile->id);
+            })
+            ->exists();
+
+        if (!$isFriend) {
+            // Treatment if they are not friends
+            // For example, return an error response
+        }
+
+        $entrepreneur->load('income');
+        if ($entrepreneur->type == User::ENTR) $entrepreneur->load('entrProfileWithRelations');
+        return new UserResource($entrepreneur);
+    }
 }

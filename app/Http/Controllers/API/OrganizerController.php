@@ -196,7 +196,21 @@ class OrganizerController extends BaseApiController
         $email = $request->input('email');
         $password = $request->input('password');
         $role = $request->input('role');
-    
+        
+        // Get the FounderProfile by its ID
+        $founderProfile = FounderProfile::find($founderId);
+        if (!$founderProfile) {
+            return response()->json(['message' => 'Founder profile not found'], 404);
+        }
+
+        // Check if the current organizer has permission to see this FounderProfile
+        $organizerId = Auth::id();
+        $founderProfileOrganizerId = $founderProfile->user_id;
+
+        if ($organizerId !== $founderProfileOrganizerId) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
         // Check if the user already exists
         $existingUser = User::where('email', $email)->first();
         if ($existingUser) {
@@ -268,8 +282,10 @@ class OrganizerController extends BaseApiController
         }
     
         // Fill the founder user with the request data
-        $founderUser->fill($request->all());
-        $founderUser->save();
+        if ($request->has('role')) {
+            $founderUser->role = $request->input('role');
+            $founderUser->save();
+        }
 
         $user = User::find($founderUser->user_id);
         if ($user) {
