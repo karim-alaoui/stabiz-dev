@@ -12,8 +12,10 @@ use App\Http\Requests\ApplyReq;
 use App\Http\Requests\FilterAplReq;
 use App\Http\Resources\PaginatedResource;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\FounderProfileResource;
 use App\Models\Application;
 use App\Models\User;
+use App\Models\FounderProfile;
 use App\Traits\RelationshipTrait;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
@@ -104,9 +106,24 @@ class ApplicationController extends BaseApiController
      */
     public function checkIfApplied(int $appliedToUserId): JsonResponse
     {
+        $user = auth()->user();
+        $userId = auth()->id();
+
+        if($user->type == "founder"){
+            $founderProfile = FounderProfile::join('founder_user', 'founder_profiles.id', '=', 'founder_user.founder_id')
+            ->where('founder_user.user_id', $user->id)
+            ->first();
+
+            if (!$founderProfile) {
+                return response()->json(['message' => 'Founder profile not found'], 404);
+            }else{
+                $userId = $founderProfile->id;
+            }
+        }
+        
         $application = Application::query()
             ->where([
-                'applied_by_user_id' => auth()->id(),
+                'applied_by_user_id' => $userId,
                 'applied_to_user_id' => $appliedToUserId
             ])
             ->select(['id'])
@@ -150,5 +167,48 @@ class ApplicationController extends BaseApiController
         else $user->load(RelationshipTrait::fdrProfileRelations());
 
         return new UserResource($user);
+    }
+    public function getAllApplications(){
+
+        $applications = Application::whereNotNull('accepted_at')->get();
+
+        $responseData = [];
+
+        foreach ($applications as $application) {
+
+            $appliedToUserId = $application->applied_to_user_id;
+            $appliedByUserId = $application->applied_by_user_id;
+
+            if ($appliedToUserId >= 100000) {
+
+                $entrepreneur = User::find($appliedToUserId);
+                $entrepreneur->load('income');
+                if ($entrepreneur->type == User::ENTR) $entrepreneur->load('entrProfileWithRelations');
+                $entrepreneur = new UserResource($entrepreneur);
+
+                $founderProfile = FounderProfile::find($appliedByUserId);
+                //$founderProfile = new FounderProfileResource(FounderProfile::find($appliedByUserId));
+
+            } elseif ($appliedByUserId >= 100000) {
+
+                $entrepreneur = User::find($appliedByUserId);
+                $entrepreneur->load('income');
+                if ($entrepreneur->type == User::ENTR) $entrepreneur->load('entrProfileWithRelations');
+                $entrepreneur = new UserResource($entrepreneur);
+
+                $founderProfile = FounderProfile::find($appliedToUserId);
+                //$founderProfile = new FounderProfileResource(FounderProfile::find($appliedToUserId));
+            } else {
+                return response()->json(['message' => 'Error, something went wrong (couldnt find an entrepreneur with id more than 100000'], 500); 
+            }
+
+            $responseData[] = [
+                'application' => $application,
+                'entrepreneur' => $entrepreneur,
+                'founder' => $founderProfile,
+            ];
+        }
+
+        return response()->json($responseData);
     }
 }

@@ -168,6 +168,8 @@ Route::prefix('v1')->group(function () {
         Route::get('staff/organizers/{userId}', [StaffController::class, 'indexOrganizerProfile']);
         Route::get('staff/organizers/{userId}/founder-profiles',  [StaffController::class, 'getOrganizerFounderProfiles']);
 
+        Route::get('staff/applications', [ApplicationController::class, 'getAllApplications']);
+
     });
 
     Route::middleware(['auth:api'])->group(function () {
