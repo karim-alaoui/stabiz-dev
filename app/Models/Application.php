@@ -21,6 +21,8 @@ class Application extends Model
     protected $fillable = [
         'applied_to_user_id',
         'applied_by_user_id',
+        'founder_NDA',
+        'entrepreneur_NDA',
         'accepted_at',
         'rejected_at'
     ];

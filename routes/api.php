@@ -111,6 +111,7 @@ Route::prefix('v1')->group(function () {
         Route::get('founders', [UserController::class, 'getFoundersList']);
         Route::get('entrepreneurs/{id}', [UserController::class, 'getEntrepreneurDetails']);
         Route::get('founders/{id}', [UserController::class, 'getFounderProfileDetails']);
+        Route::put('/applications/{id}/agreeNDA', [ApplicationController::class, 'agreeToNDA']);
 
         // search founders can be done by entrepreneurs
         Route::get('/search-fdr', [SearchController::class, 'searchFdr']);
@@ -169,6 +170,7 @@ Route::prefix('v1')->group(function () {
         Route::get('staff/organizers/{userId}/founder-profiles',  [StaffController::class, 'getOrganizerFounderProfiles']);
 
         Route::get('staff/applications', [ApplicationController::class, 'getAllApplications']);
+        Route::put('staff/applications/{id}', [ApplicationController::class, 'update']);
 
     });
 

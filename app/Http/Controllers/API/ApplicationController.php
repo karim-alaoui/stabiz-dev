@@ -19,6 +19,7 @@ use App\Models\FounderProfile;
 use App\Traits\RelationshipTrait;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
  * @group Application
@@ -210,5 +211,70 @@ class ApplicationController extends BaseApiController
         }
 
         return response()->json($responseData);
+    }
+    public function agreeToNDA(Request $request, $id)
+    {
+        // Get the authenticated user
+        $user = auth()->user();
+        $userId = null;
+
+        if ($user->type == User::FOUNDER) {
+            $founderProfile = FounderProfile::join('founder_user', 'founder_profiles.id', '=', 'founder_user.founder_id')
+            ->where('founder_user.user_id', $user->id)
+            ->first();
+
+            if (!$founderProfile) {
+                return response()->json(['message' => 'Founder profile not found'], 404);
+            } else {
+                $userId = $founderProfile->id;
+            }
+
+        } elseif ($user->type == User::ENTR) {
+            $userId = $user->id;
+        } else {
+            return response()->json(['message' => 'User is not founder nor entrepreneur'], 403);
+        }
+
+        // Find the application by ID
+        $application = Application::findOrFail($id);
+
+        // Check if the authenticated user is the owner of the application
+        if ($userId !== $application->applied_to_user_id && $userId !== $application->applied_by_user_id ) {
+            return response()->json(['message' => 'You are not authorized to agree to the NDA for this application'], 403);
+        }
+
+        // Update the application's founder_NDA column to the current time
+        if($user->type == User::FOUNDER){
+            $application->update(['founder_NDA' => now()]);
+        } elseif ($user->type == User::ENTR){
+            $application->update(['entrepreneur_NDA' => now()]);
+        }
+        
+        return response()->json(['message' => 'NDA agreed successfully']);
+    }
+    public function update(Request $request, $id)
+    {
+        // Retrieve the application based on the provided ID
+        $application = Application::findOrFail($id);
+        
+        // Validate the request data
+        $validatedData = $request->validate([
+            'negotiations' => 'nullable',
+            'admin' => 'nullable|exists:staff,id',
+        ]);
+        
+        // Update the negotiation and admin columns
+        if (isset($validatedData['negotiations'])) {
+            $application->negotiations = $validatedData['negotiations'];
+        }
+        
+        if (isset($validatedData['admin'])) {
+            $application->admin = $validatedData['admin'];
+        }
+        
+        // Save the changes
+        $application->save();
+        
+        return response()->json(['message' => 'Application updated successfully']);
     }
 }
