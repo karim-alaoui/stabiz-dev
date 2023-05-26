@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
+use App\Models\FounderProfile;
 
 /**
  * Class UserResource
@@ -34,9 +35,10 @@ class UserResource extends JsonResource
             $entrProfile = $this->whenLoaded('entrProfile');
         }
 
-        $fdrProfile = $this->whenLoaded('fdrProfileWithRelations');
-        if ((array)$fdrProfile == []) {
-            $fdrProfile = $this->whenLoaded('fdrProfile');
+        if( $this->type == 'founder'){
+            $fdrProfile = FounderProfile::join('founder_user', 'founder_profiles.id', '=', 'founder_user.founder_id')
+            ->where('founder_user.user_id', $this->id)
+            ->first();
         }
 
         // dp/profile picture

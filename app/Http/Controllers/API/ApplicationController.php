@@ -42,7 +42,7 @@ class ApplicationController extends BaseApiController
         /**@var User $user */
         $user = auth()->user();
 
-        Apply::execute($user, User::findOrFail($request->apply_to_user_id));
+        Apply::execute($user, $request->apply_to_user_id);
         return $this->successMsg(code: 201);
     }
 

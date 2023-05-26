@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Staff;
 use App\Models\User;
-use App\Rules\ValuesExist;
+use App\Rules\UserOrFounderProfileExists;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -31,8 +31,9 @@ class AssignUserReq extends FormRequest
     public function rules()
     {
         return [
-            'user_id' => ['required', 'array', new ValuesExist('id', User::class)],
+            'user_id' => ['required', 'integer', new UserOrFounderProfileExists],
             'staff_id' => ['required', 'integer', 'exists:' . (new Staff())->getTable() . ',id']
         ];
     }
+
 }

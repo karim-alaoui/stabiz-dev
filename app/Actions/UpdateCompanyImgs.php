@@ -95,7 +95,13 @@ class UpdateCompanyImgs
         $disk = config('filesystems.default');
 
         /**@var FounderProfile $fdrProfile */
-        $fdrProfile = $user->fdrProfile;
+        $fdrProfile = FounderProfile::join('founder_user', 'founder_profiles.id', '=', 'founder_user.founder_id')
+            ->where('founder_user.user_id', $user->id)
+            ->first();
+
+        if (!$fdrProfile) {
+            return response()->json(['message' => 'Founder profile not found'], 404);
+        }
 
         if (self::$removeLogo) self::removeLogo($fdrProfile);
 

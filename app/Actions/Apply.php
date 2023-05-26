@@ -11,6 +11,7 @@ use App\Models\Package;
 use App\Models\Recommendation;
 use App\Models\Staff;
 use App\Models\User;
+use App\Models\FounderProfile;
 use App\Notifications\NotificationMail;
 use Exception;
 
@@ -65,6 +66,12 @@ class Apply
     public static function execute(User $user, User $applyToUser): mixed
     {
         $userType = $user->type;
+
+        if ($userType == 'founder'){
+            $user = FounderProfile::join('founder_user', 'founder_profiles.id', '=', 'founder_user.founder_id')
+            ->where('founder_user.user_id', $user->id)
+            ->first();
+        }
 
         if ($user->id == $applyToUser->id) {
             throw new ActionException(__('Can not apply to oneself'));

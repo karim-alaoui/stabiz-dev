@@ -24,8 +24,8 @@ class CreateUser
      */
     public static function execute(array $data, string $type, bool $sendOTP = false): mixed
     {
-        if (!in_array($type, ['founder', 'entrepreneur'])) {
-            throw new ActionException('Type has to be either founder or entrepreneur');
+        if (!in_array($type, ['entrepreneur'])) {
+            throw new ActionException('Type has to be entrepreneur');
         }
         $email = strtolower(Arr::get($data, 'email'));
         $userdata = Arr::except($data, ['password', 'email']);

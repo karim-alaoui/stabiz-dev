@@ -36,7 +36,7 @@ class RecommendController extends BaseApiController
      */
     public function recUserSearch(RcmdListReq $request): AnonymousResourceCollection
     {
-        $users = RecUserSearch::execute(User::find($request->user_id), $request->all());
+        $users = RecUserSearch::execute($request->user_id, $request->all());
         return UserResource::collection($users);
     }
 
@@ -51,8 +51,8 @@ class RecommendController extends BaseApiController
      */
     public function recommend(RecommendReq $request): JsonResponse
     {
-        $recommendToUser = User::find($request->recommended_to_user_id);
-        $recommendUser = User::find($request->recommended_user_id);
+        $recommendToUser = $request->recommended_to_user_id;
+        $recommendUser = $request->recommended_user_id;
         /**@var Staff $staff */
         $staff = auth()->user();
         RecommendFn::execute($staff, $recommendUser, $recommendToUser);

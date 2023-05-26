@@ -107,7 +107,7 @@ class AuthController extends BaseApiController
     public function register(RegReq $request, $type): JsonResponse
     {
         $type = strtolower($type);
-        if (!in_array($type, [User::ENTR, User::FOUNDER])) {
+        if (!in_array($type, [User::ENTR])) {
             throw new Exception(__('Invalid type provided'));
         }
         $request->validate([

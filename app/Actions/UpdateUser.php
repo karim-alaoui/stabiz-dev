@@ -59,9 +59,6 @@ class UpdateUser
             if ($user->type == User::ENTR) {
                 UpdateEntrProfile::execute($user, $data);
                 $user->load('entrProfileWithRelations');
-            } elseif ($user->type == User::FOUNDER) {
-                UpdateFdrProfile::execute($user, $data);
-                $user->load('fdrProfileWithRelations');
             }
         });
 
