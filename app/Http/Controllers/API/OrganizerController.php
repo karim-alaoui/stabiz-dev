@@ -155,7 +155,7 @@ class OrganizerController extends BaseApiController
             return response()->json(['message' => 'Invalid email or confirmation code.'], 401);
         }
 
-        $organizer->password = Hash::make($request->password);
+        $organizer->password = $request->password;
         $organizer->confirmation_code = null;
         $organizer->save();
 
