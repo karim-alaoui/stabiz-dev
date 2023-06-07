@@ -189,7 +189,7 @@ class UserController extends BaseApiController
             ->with(['entrProfile' => function ($query) {
                 $query->select('id', 'user_id', 'area_id', 'present_post_id');
             }, 'entrProfile.area:id,name_ja', 'entrProfile.industriesPfd:id,name', 'entrProfile.positionsPfd:id,name'])
-            ->join('income_ranges', 'users.income_range_id', '=', 'income_ranges.id')
+            ->leftjoin('income_ranges', 'users.income_range_id', '=', 'income_ranges.id')
             ->select('users.id', 'users.first_name', 'income_ranges.upper_limit', DB::raw("date_part('year',age(users.dob)) AS age"))
             ->orderBy('users.created_at', 'desc')
             ->get();

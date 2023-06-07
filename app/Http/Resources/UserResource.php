@@ -35,6 +35,8 @@ class UserResource extends JsonResource
             $entrProfile = $this->whenLoaded('entrProfile');
         }
 
+        $fdrProfile = $this->whenLoaded('fdrProfileWithRelations');
+        
         if( $this->type == 'founder'){
             $fdrProfile = FounderProfile::join('founder_user', 'founder_profiles.id', '=', 'founder_user.founder_id')
             ->where('founder_user.user_id', $this->id)

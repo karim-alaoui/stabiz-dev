@@ -36,7 +36,7 @@ class OrganizerController extends BaseApiController
     {
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email', 'unique:organizers,email'],
-            'password' => ['required', Password::min(10)],
+            'password' => ['required', Password::min(8)],
             'professional_corporation_name' => ['required', 'string'],
             'name_of_person_in_charge' => ['required', 'string'],
             'phone_number' => ['required', 'string'],
@@ -190,6 +190,11 @@ class OrganizerController extends BaseApiController
     }
     public function createFounderUser(Request $request)
     {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|min:8'
+        ]);
+
         $founderId = $request->input('founder_id');
         $firstName = $request->input('first_name');
         $lastName = $request->input('last_name');
@@ -339,7 +344,7 @@ class OrganizerController extends BaseApiController
         $organizerId = Auth::user()->id;
 
         $founderProfiles = FounderProfile::where('user_id', $organizerId)
-            ->with(['area', 'prefecture', 'offeredIncome'])
+            ->with(['area', 'prefecture', 'offeredIncome', 'industries'])
             ->get();
     
         return response()->json($founderProfiles);

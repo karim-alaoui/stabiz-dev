@@ -79,8 +79,6 @@ Route::prefix('v1')->group(function () {
 
     Route::middleware('auth:api-organizer')->group(function () {
         // Routes for authenticated organizers
-        Route::get('/organizers', [OrganizerController::class, 'index']);
-        Route::get('/organizers/{id}', [OrganizerController::class, 'show']);
         Route::get('organizer/profile', [OrganizerController::class, 'indexOrganizerProfile']);
         Route::put('organizer/profile', [OrganizerController::class, 'updateProfile']);
         Route::post('organizer/founder-users', [OrganizerController::class, 'createFounderUser']);
