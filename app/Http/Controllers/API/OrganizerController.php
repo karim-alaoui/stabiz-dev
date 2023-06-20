@@ -179,8 +179,14 @@ class OrganizerController extends BaseApiController
         // Get the user's current profile
         $user = Organizer::findOrFail($authenticatedUser->id);
         
-        // Update the user's profile with the data from the request
-        $user->fill($request->all());
+        // Update the user's profile with the specific data from the request
+        $data = $request->only([
+            'professional_corporation_name',
+            'name_of_person_in_charge',
+            'phone_number',
+            'square_one_members_id'
+        ]);
+        $user->fill($data);
         
         // Save the updated profile
         $user->save();
@@ -413,9 +419,40 @@ class OrganizerController extends BaseApiController
             UpdateFdrPfdPrefecture::execute($fdrProfile, Arr::get($data, 'pfd_prefecture_ids', []));
             UpdatePfdPositions::execute($fdrProfile, Arr::get($data, 'pfd_position_ids', []));
 
+            // Create User
+            $organizer = Organizer::find($organizerId);
+
+
+
+            try {
+                $user = new User();
+                $user->first_name = $organizer->professional_corporation_name;
+                $user->email = $fdrProfile->id . '-' . $organizer->email;
+                $user->type = 'founder';
+                $user->password = $organizer->password;
+                $user->save();
+            }catch (\Throwable $th) {
+                // Handle any errors with creating the user
+            }
+
+            // Create FounderUser (the relation table)
+            $founderUser = new FounderUser();
+            $founderUser->founder_id = $fdrProfile->id;
+            $founderUser->user_id = $user->id;
+            $founderUser->role = 'readwrite';
+            $founderUser->save();
+
             DB::commit();
 
-            return response()->json(['message' => 'Founder profile created successfully'], 201);
+            //return response()->json(['message' => 'Founder profile created successfully'], 201);
+            return response()->json([
+                'message' => 'Founder profile and user created successfully',
+                'data' => [
+                    'founderUser' => $founderUser,
+                    'founderProfile' => $fdrProfile,
+                    'user' => $user,
+                ]
+            ], 201);
         }
 
         return response()->json(['error' => 'Organizer ID not found'], 400);
