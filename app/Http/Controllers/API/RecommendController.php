@@ -51,8 +51,8 @@ class RecommendController extends BaseApiController
      */
     public function recommend(RecommendReq $request): JsonResponse
     {
-        $recommendToUser = $request->recommended_to_user_id;
-        $recommendUser = $request->recommended_user_id;
+        $recommendToUser = User::find($request->recommended_to_user_id);
+        $recommendUser = User::find($request->recommended_user_id);
         /**@var Staff $staff */
         $staff = auth()->user();
         RecommendFn::execute($staff, $recommendUser, $recommendToUser);

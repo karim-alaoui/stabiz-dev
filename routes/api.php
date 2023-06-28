@@ -150,7 +150,7 @@ Route::prefix('v1')->group(function () {
         Route::apiResource('email-template', MailTemplateController::class);
         Route::delete('clear-cache', [ValueController::class, 'clearCache']);
         Route::apiResource('article', ArticleController::class);
-//        Route::apiResource('master-coupon', MasterCouponController::class);
+//      Route::apiResource('master-coupon', MasterCouponController::class);
         Route::post('recommend', [RecommendController::class, 'recommend']);
         Route::get('rec-users-search', [RecommendController::class, 'recUserSearch']);
         Route::get('docs/{id}', [UploadDocController::class, 'show']);

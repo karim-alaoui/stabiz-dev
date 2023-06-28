@@ -235,8 +235,7 @@ class UserController extends BaseApiController
             ->exists();
 
         if (!$isFriend) {
-            // Treatment if they are not friends
-            // For example, return an error response
+            return response()->json(['message' => 'You must be friends with this founder to see his details'], 401);
         }
 
         return new FounderProfileResource($founderProfile);
@@ -269,8 +268,7 @@ class UserController extends BaseApiController
             ->exists();
 
         if (!$isFriend) {
-            // Treatment if they are not friends
-            // For example, return an error response
+            return response()->json(['message' => 'You must be friends with this entrepreneur to see his details'], 401);
         }
 
         $entrepreneur->load('income');
