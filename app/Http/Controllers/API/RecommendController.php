@@ -36,7 +36,7 @@ class RecommendController extends BaseApiController
      */
     public function recUserSearch(RcmdListReq $request): AnonymousResourceCollection
     {
-        $users = RecUserSearch::execute($request->user_id, $request->all());
+        $users = RecUserSearch::execute(User::find($request->user_id), $request->all());
         return UserResource::collection($users);
     }
 

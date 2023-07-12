@@ -23,6 +23,7 @@ class Application extends Model
         'applied_by_user_id',
         'founder_NDA',
         'entrepreneur_NDA',
+        'created_at',
         'accepted_at',
         'rejected_at'
     ];

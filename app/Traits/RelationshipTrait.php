@@ -29,6 +29,8 @@ trait RelationshipTrait
             'industriesExp',
             'prefecturesPfd',
             'industriesPfd',
+            'areasPfd',
+            'occupationsPfd',
             'prefecture',
             'area',
             'managementExp',

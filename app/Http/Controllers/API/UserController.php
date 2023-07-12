@@ -204,8 +204,8 @@ class UserController extends BaseApiController
             return response()->json(['message' => 'User is not an entrepreneur'], 403);
         }
 
-        $founderProfiles = FounderProfile::select('id', 'company_name', 'no_of_employees', 'is_listed_company', 'area_id')
-            ->with(['area:id,name_ja', 'industries:id,name'])
+        $founderProfiles = FounderProfile::select('id', 'company_name', 'no_of_employees', 'is_listed_company', 'area_id','offered_income_range_id')
+            ->with(['area', 'industries', 'offeredIncome'])
             ->orderBy('created_at', 'desc')
             ->get();
 

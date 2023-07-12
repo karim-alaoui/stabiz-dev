@@ -335,7 +335,7 @@ class OrganizerController extends BaseApiController
             $user = User::find($founderUser->user_id);
 
             $founderUsersDetails[] = [
-                'id' => $founderUser->id,
+                'id' => $user->id,
                 'role' => $founderUser->role,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,

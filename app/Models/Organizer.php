@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Passport\HasApiTokens;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -30,5 +31,17 @@ class Organizer extends Authenticatable
     public function setPasswordAttribute($value)
     {
         $this->attributes['password'] = Hash::make($value);
+    }
+    /**
+     * Query by email and user type
+     * @param Builder $q
+     * @param string $email
+     * @return Builder
+     */
+    public function scopeEmailAndType(Builder $q, string $email): Builder
+    {
+        return $q->where([
+            ['email', 'ilike', $email]
+        ]);
     }
 }

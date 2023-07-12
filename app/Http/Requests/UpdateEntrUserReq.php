@@ -110,6 +110,8 @@ class UpdateEntrUserReq extends FormRequest
             'expected_income_range_id' => ['sometimes', 'required', 'integer', 'exists:' . (new IncomeRange())->getTable() . ',id'],
             'pfd_prefecture_ids' => ['sometimes', 'required', 'array', 'max:3', new ValuesExist('id', Prefecture::class)],
             'pfd_industry_ids' => ['sometimes', 'required', 'array', 'max:3', new ValuesExist('id', Industry::class)],
+            'pfd_occupation_ids' => ['sometimes', 'required', 'array', 'max:3', new ValuesExist('id', Occupation::class)],
+            'pfd_area_ids' => ['sometimes', 'required', 'array', 'max:3', 'exists:' . (new Area())->getTable() . ',id'],
             'industry_ids' => ['sometimes', 'required', 'array', 'max:3', new ValuesExist('id', Industry::class)],
             'prefecture_id' => ['sometimes', 'required', 'integer', 'exists:' . (new Prefecture())->getTable() . ',id'],
             'area_id' => ['sometimes', 'required', 'integer', 'exists:' . (new Area())->getTable() . ',id'],

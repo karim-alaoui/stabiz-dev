@@ -21,6 +21,7 @@ class NewsTopicResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'visible_to' => json_decode($this->visible_to),
             'title' => $this->title,
             'body' => $this->body,
             'show_after' => $this->show_after,

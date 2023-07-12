@@ -120,6 +120,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/applications/reject/{application}', [ApplicationController::class, 'reject']);
         Route::post('/applications/accept/{application}', [ApplicationController::class, 'accept']);
         Route::get('/applications/applied', [ApplicationController::class, 'applied']);
+        Route::get('/applications/getApplications', [ApplicationController::class, 'getApl']);
         Route::get('/applications/check/{appliedToUserId}', [ApplicationController::class, 'checkIfApplied']);
         Route::get('/applications/recvd', [ApplicationController::class, 'recvdApl']);
         Route::post('/applications/{application}/applicant-detail', [ApplicationController::class, 'applicantDetails']);

@@ -40,6 +40,8 @@ class EntrProfileResource extends JsonResource
             'prefectures_pfd' => PrefectureResource::collection($this->whenLoaded('prefecturesPfd')),
             'industries_pfd' => IndustryResource::collection($this->whenLoaded('industriesPfd')),
             'positions_pfd' => PositionResource::collection($this->whenLoaded('positionsPfd')),
+            'areas_pfd' => AreaResource::collection($this->whenLoaded('areasPfd')),
+            'occupations_pfd' => OccupationResource::collection($this->whenLoaded('occupationsPfd')),
             'work_start_date' => $this->work_start_date,
             'school_major' => $this->school_major,
             'management_exp' => new MgmtExpResource($this->whenLoaded('managementExp'))

@@ -35,8 +35,8 @@ class GetNewsTopic
                 $filter[] = "hide_after>=$hideAfter";
             }
 
-            $options['filter'] = count($filter) ? implode(' AND ', $filter) : null;
-            $options['sort'] = ['id:desc'];
+            //$options['filter'] = count($filter) ? implode(' AND ', $filter) : null;
+            //$options['sort'] = ['id:desc'];
             return $meilisearch->search($meilisearchQ, $options);
         })
             ->paginate(

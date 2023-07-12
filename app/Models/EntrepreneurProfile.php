@@ -188,4 +188,34 @@ class EntrepreneurProfile extends Model
             secondLocalKey: 'position_id'
         );
     }
+    public function occupationsPfd(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Occupation::class,
+            EntrPfdOccupation::class,
+            'entrepreneur_profile_id', // Foreign key on EntrPfdArea table
+            'id', // Local key on EntrepreneurProfile table
+            'id', // Local key on Area table
+            'occupation_id' // Foreign key on EntrPfdArea table
+        );
+    }
+    public function pfdOccupations(): HasMany
+    {
+        return $this->hasMany(EntrPfdOccupation::class);
+    }
+    public function areasPfd(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Area::class,
+            EntrPfdArea::class,
+            'entrepreneur_profile_id', // Foreign key on EntrPfdArea table
+            'id', // Local key on EntrPfdOccupation table
+            'id', // Local key on Area table
+            'area_id' // Foreign key on EntrPfdArea table
+        );
+    }
+    public function pfdAreas(): HasMany
+    {
+        return $this->hasMany(EntrPfdArea::class);
+    }
 }

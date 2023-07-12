@@ -20,6 +20,7 @@ use App\Traits\RelationshipTrait;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @group Application
@@ -98,6 +99,91 @@ class ApplicationController extends BaseApiController
     }
 
     /**
+     * Received applications
+     *
+     * This will return all the applications by default (both rejected and accepted. You can always filter by `type` query)
+     * @param FilterAplReq $request
+     * @return PaginatedResource
+     */
+    public function recvdApl(FilterAplReq $request): PaginatedResource
+    {
+        return new PaginatedResource(
+            GetRecvdApl::execute(auth()->user(), $request->all())
+        );
+    }
+    
+    public function getApl(Request $request)
+    {
+        $user = auth()->user();
+        $userId = $user->id;
+        
+        if ($user->type == "founder") {
+            $founderProfile = FounderProfile::join('founder_user', 'founder_profiles.id', '=', 'founder_user.founder_id')
+                ->where('founder_user.user_id', $user->id)
+                ->first();
+
+            if (!$founderProfile) {
+                return response()->json(['message' => 'Founder profile not found'], 404);
+            } else {
+                $userId = $founderProfile->id;
+            }
+
+            $otherUserModel = EntrepreneurProfile::class;
+            $otherUserIdColumn = 'applied_by_user_id';
+            $otherUserDetails = FounderProfile::select('id', 'company_name', 'no_of_employees', 'is_listed_company', 'area_id', 'offered_income_range_id')
+                ->with(['area', 'industries', 'offeredIncome'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } elseif ($user->type == "entrepreneur") {
+            $otherUserModel = FounderProfile::class;
+            $otherUserIdColumn = 'applied_to_user_id';
+            $otherUserDetails = User::where('type', User::ENTR)
+                ->with(['entrProfile' => function ($query) {
+                    $query->select('id', 'user_id', 'area_id', 'present_post_id');
+                }, 'entrProfile.area:id,name_ja', 'entrProfile.industriesPfd:id,name', 'entrProfile.positionsPfd:id,name'])
+                ->leftjoin('income_ranges', 'users.income_range_id', '=', 'income_ranges.id')
+                ->select('users.id', 'users.first_name', 'income_ranges.upper_limit', DB::raw("date_part('year',age(users.dob)) AS age"))
+                ->orderBy('users.created_at', 'desc')
+                ->get();
+        } else {
+            return response()->json(['message' => 'Invalid user type'], 400);
+        }
+
+        $applications = DB::table('applications')
+            ->select(
+                DB::raw("CASE
+                    WHEN applied_to_user_id = $userId THEN 'received'
+                    WHEN applied_by_user_id = $userId THEN 'applied'
+                    ELSE ''
+                END AS type"),
+                DB::raw("CASE
+                    WHEN accepted_at IS NOT NULL THEN 'accepted'
+                    WHEN rejected_at IS NOT NULL THEN 'rejected'
+                    ELSE 'pending'
+                END AS status"),
+                'applications.id',
+                $otherUserIdColumn.' AS other_user_id',
+                'founder_NDA',
+                'entrepreneur_NDA',
+                'negotiations',
+                'admin'
+            )
+            ->where(function ($query) use ($userId) {
+                $query->where('applied_to_user_id', $userId)
+                    ->orWhere('applied_by_user_id', $userId);
+            })
+            ->get();
+
+        $applicationsWithOtherUser = $applications->map(function ($application) use ($otherUserModel, $otherUserDetails) {
+            $otherUser = $otherUserDetails->firstWhere('id', $application->other_user_id);
+            $application->other_user = $otherUser;
+            unset($application->other_user_id);
+            return $application;
+        });
+
+        return response()->json(['applications' => $applicationsWithOtherUser]);
+    }
+    /**
      * Check if applied
      *
      * Check if the auth user has applied to this user or not
@@ -132,20 +218,6 @@ class ApplicationController extends BaseApiController
         return $this->success([
             'applied' => (bool)$application
         ]);
-    }
-
-    /**
-     * Received applications
-     *
-     * This will return all the applications by default (both rejected and accepted. You can always filter by `type` query)
-     * @param FilterAplReq $request
-     * @return PaginatedResource
-     */
-    public function recvdApl(FilterAplReq $request): PaginatedResource
-    {
-        return new PaginatedResource(
-            GetRecvdApl::execute(auth()->user(), $request->all())
-        );
     }
 
     /**

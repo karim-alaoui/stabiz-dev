@@ -158,7 +158,7 @@ class StaffController extends BaseApiController
             $user = User::find($founderUser->user_id);
 
             $founderUsersDetails[] = [
-                'id' => $founderUser->id,
+                'id' => $user->id,
                 'role' => $founderUser->role,
                 'first_name' => $user->first_name,
                 'last_name' => $user->last_name,
@@ -248,11 +248,14 @@ class StaffController extends BaseApiController
         // Return a response indicating that the founder user was updated successfully
         return response()->json(['message' => 'Founder user updated successfully']);
     }
-    public function getOrganizers()
+    public function getOrganizers(Request $request)
     {
-        $organizers = Organizer::all();
+        $organizers = Organizer::query();
 
-        return response()->json($organizers);
+        return $organizers->paginate(
+            perPage: Arr::get($request->all(), 'per_page', 15),
+            page: Arr::get($request->all(), 'page', 1)
+        );
     }
     public function indexOrganizerProfile(Request $request, $userId)
     {

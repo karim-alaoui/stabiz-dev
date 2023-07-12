@@ -126,7 +126,7 @@ class UpdateEntrProfile
         }
 
         $profile->save();
-
+        
         $pfdIndustries = Arr::get($data, 'pfd_industry_ids', []);
         if (count($pfdIndustries)) UpdateEntrPfdIndustry::execute($profile, $pfdIndustries);
 
@@ -138,7 +138,13 @@ class UpdateEntrProfile
 
         $pfdPositions = Arr::get($data, 'pfd_position_ids', []);
         if (count($pfdPositions) && gettype($pfdPositions) == 'array') UpdateEntrPfdPositions::execute($profile, $pfdPositions);
-
+        
+        $pfdOccupations = Arr::get($data, 'pfd_occupation_ids', []);
+        if (count($pfdOccupations)) UpdateEntrPfdOccupation::execute($profile, $pfdOccupations);
+        
+        $pfdAreas = Arr::get($data, 'pfd_area_ids', []);
+        if (count($pfdAreas)) UpdateEntrPfdArea::execute($profile, $pfdAreas);
+        
         DB::commit();
         return $profile;
     }
