@@ -32,7 +32,7 @@ class EntrepreneurProfile extends Model
 
     public function area(): BelongsTo
     {
-        return $this->belongsTo(Area::class);
+        return $this->belongsTo(Area::class, 'area_id');
     }
 
     public function user(): BelongsTo

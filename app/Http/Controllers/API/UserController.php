@@ -34,6 +34,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Actions\ApplicationStatus;
 
 /**
  * @group User
@@ -177,7 +178,7 @@ class UserController extends BaseApiController
 
         return new UserResource($user);
     }
-    public function getEntrepreneursList(Request $request)
+    public function getEntrepreneursList(Request $request, ApplicationStatus $applicationStatus)
     {
         $user = auth()->user();
 
@@ -185,18 +186,41 @@ class UserController extends BaseApiController
             return response()->json(['message' => 'User is not a founder'], 403);
         }
 
+        $founderProfile = FounderProfile::join('founder_user', 'founder_profiles.id', '=', 'founder_user.founder_id')
+            ->where('founder_user.user_id', $user->id)
+            ->first();
+
+        if (!$founderProfile) {
+            return response()->json(['message' => 'Founder profile not found'], 404);
+        }
+
         $entrepreneurs = User::where('type', User::ENTR)
-            ->with(['entrProfile' => function ($query) {
-                $query->select('id', 'user_id', 'area_id', 'present_post_id');
-            }, 'entrProfile.area:id,name_ja', 'entrProfile.industriesPfd:id,name', 'entrProfile.positionsPfd:id,name'])
-            ->leftjoin('income_ranges', 'users.income_range_id', '=', 'income_ranges.id')
-            ->select('users.id', 'users.first_name', 'income_ranges.upper_limit', DB::raw("date_part('year',age(users.dob)) AS age"))
+            ->with([
+                'income',
+                'entrProfile' => function ($query) {
+                    $query->select('id', 'user_id', 'area_id')->with(['area', 'industriesPfd', 'positionsPfd']);
+                }
+            ])
+            ->select('users.id', 'users.first_name', 'income_range_id', DB::raw("date_part('year',age(users.dob)) AS age"))
             ->orderBy('users.created_at', 'desc')
             ->get();
 
-        return response()->json($entrepreneurs);
+        // Retrieve the IDs of entrepreneurs
+        $entrepreneurIds = $entrepreneurs->pluck('id')->toArray();
+
+        // Get the application status for each entrepreneur
+        $applicationStatuses = $applicationStatus->processApplications($founderProfile->id, $entrepreneurIds);
+
+        // Add the application status to each entrepreneur
+        $entrepreneurs->each(function ($entrepreneur) use ($applicationStatuses) {
+            $entrepreneur->application_status = $applicationStatuses
+                ->where('other_user_id', $entrepreneur->id)
+                ->first();
+        });
+
+        return $entrepreneurs;
     }
-    public function getFoundersList(Request $request)
+    public function getFoundersList(Request $request, ApplicationStatus $applicationStatus)
     {
         $user = auth()->user();
 
@@ -209,6 +233,18 @@ class UserController extends BaseApiController
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Retrieve the IDs of founder profiles
+        $founderProfileIds = $founderProfiles->pluck('id')->toArray();
+
+        // Get the application status for each founder profile
+        $applicationStatuses = $applicationStatus->processApplications($user->id, $founderProfileIds);
+
+        $founderProfiles->each(function ($founderProfile) use ($applicationStatuses) {
+            $founderProfile->application_status = $applicationStatuses
+                ->where('other_user_id', $founderProfile->id)
+                ->first();
+        });
+        
         return $founderProfiles;
 
     }

@@ -422,8 +422,6 @@ class OrganizerController extends BaseApiController
             // Create User
             $organizer = Organizer::find($organizerId);
 
-
-
             try {
                 $user = new User();
                 $user->first_name = $organizer->professional_corporation_name;

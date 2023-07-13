@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use App\Models\FounderProfile;
+use Carbon\Carbon;
 
 /**
  * Class SearchFounder
@@ -31,48 +33,85 @@ class SearchFounder
 
     /**
      * @param array $query
-     * @return LengthAwarePaginator
      */
-    public static function execute(array $query): LengthAwarePaginator
+    public static function execute(array $query)
     {
-        /**@var Builder $users */
-        $users = User::query()->founders()->select('id');
+        /** @var Builder $founderProfiles */
+        $founderProfiles = FounderProfile::query();
+        
+        //capital filter
+        $minCapital = Arr::get($query, 'min_capital');
+        $maxCapital = Arr::get($query, 'max_capital');
+        if ($minCapital !== null && is_numeric($minCapital)) {
+            $founderProfiles->where('capital', '>=', $minCapital);
+        }
+        if ($maxCapital !== null && is_numeric($maxCapital)) {
+            $founderProfiles->where('capital', '<=', $maxCapital);
+        } 
 
-        $expectingIncomeId = Arr::get($query, 'expecting_income'); // this is income range id
+        //area filter
+        $areaId = Arr::get($query, 'area_id');
+        if ($areaId) {
+            $founderProfiles->where('area_id', $areaId);
+        }
+
+        //prefecture filter
+        $prefectureId = Arr::get($query, 'prefecture_id');
+        if ($prefectureId) {
+            $founderProfiles->where('prefecture_id', $prefectureId);
+        }
+
+        //established on filter
+        $minEstablishedOn = Arr::get($query, 'min_established_on');
+        $maxEstablishedOn = Arr::get($query, 'max_established_on');
+        if ($minEstablishedOn) {
+            $minEstablishedOn = Carbon::parse($minEstablishedOn)->format('Y-m-d');
+            $founderProfiles->where('established_on', '>=', $minEstablishedOn);
+        }
+        if ($maxEstablishedOn) {
+            $maxEstablishedOn = Carbon::parse($maxEstablishedOn)->format('Y-m-d');
+            $founderProfiles->where('established_on', '<=', $maxEstablishedOn);
+        }
+
+        //industry filter
+        $industryIds = Arr::get($query, 'industry');
+        if ($industryIds) {
+            $industryIds = explode(',', $industryIds);
+            $founderProfiles->whereHas('companyIndustries', function (Builder $q) use ($industryIds) {
+                $q->whereIn('industry_id', $industryIds);
+            });
+        }
+
+        //preferred Industries filter
+        $preferredIndustries = Arr::get($query, 'pref_industries');
+        if ($preferredIndustries) {
+            $preferredIndustries = explode(',', $preferredIndustries);
+            $founderProfiles->whereHas('pfdIndustries', function (Builder $q) use ($preferredIndustries) {
+                $q->whereIn('industry_id', $preferredIndustries);
+            });
+        }
+
+        //preferred Positions filter
+        $preferredPositions = Arr::get($query, 'pref_positions');
+        if ($preferredPositions) {
+            $preferredPositions = explode(',', $preferredPositions);
+            $founderProfiles->whereHas('pfdPositions', function (Builder $q) use ($preferredPositions) {
+                $q->whereIn('position_id', $preferredPositions);
+            });
+        }
+
+        //offered income range filter
+        $expectingIncomeId = Arr::get($query, 'offered_income_range');
         if ($expectingIncomeId) {
-            $users = $users->whereHas('fdrProfile', function (Builder $q) use ($expectingIncomeId) {
-                $q->where('offered_income_range_id', $expectingIncomeId);
-            });
+            $founderProfiles->where('offered_income_range_id', $expectingIncomeId);
         }
 
-        $industries = Arr::get($query, 'industries'); // industries which entr is looking for.
-        if ($industries) {
-            $industries = explode(',', $industries); // it's comma seperated string
-            $users = self::searchIndustry($users, $industries);
+        //listing division
+        $IsListed = Arr::get($query, 'is_listed');
+        if ($IsListed) {
+            $founderProfiles->where('is_listed_company', $IsListed);
         }
 
-        $area = Arr::get($query, 'area_id');
-        $prefecture = Arr::get($query, 'prefecture_id');
-        if ($area || $prefecture) {
-            $users = $users->whereHas('fdrProfile.pfdPrefectures.prefecture', function (Builder $q) use ($area, $prefecture) {
-                if ($prefecture) $q->where('id', $prefecture);
-                elseif ($area) $q->where('area_id', $area);
-            });
-        }
-
-        $positions = Arr::get($query, 'positions');
-        if ($positions) {
-            $positions = explode(',', $positions); // comma separated string
-            $users = $users->whereHas('fdrProfile.pfdPositions', function (Builder $q) use ($positions) {
-                $q->whereIn('position_id', $positions);
-            });
-        }
-
-        return $users
-            ->with(['fdrProfile:user_id,company_name'])
-            ->paginate(
-                perPage: Arr::get($query, 'per_page', 15),
-                page: Arr::get($query, 'page', 1)
-            );
+        return $founderProfiles->pluck('id')->all();
     }
 }

@@ -138,7 +138,7 @@ Route::prefix('v1')->group(function () {
     });
 
     Route::middleware('auth:api-staff')->group(function () {
-        Route::post('logout/staff/{logout_everywhere?}', [AuthController::class, 'logout'])->name('logout');
+        Route::post('logout/staff/{logout_everywhere?}', [AuthController::class, 'logout']);
         Route::get('staff/authenticated', [StaffController::class, 'staff']);
         Route::patch('staff/password/{staff}', [StaffController::class, 'updatePass']);
         Route::apiResource('staff', StaffController::class)->only(['index', 'store', 'update', 'destroy']);

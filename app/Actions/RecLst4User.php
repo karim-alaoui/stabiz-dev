@@ -4,8 +4,12 @@ namespace App\Actions;
 
 use App\Models\Recommendation;
 use App\Models\User;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use App\Actions\ApplicationStatus;
+use App\Models\FounderProfile;
+use Illuminate\Support\Facades\DB;
+
 
 /**
  * Recommended user list for the user
@@ -15,20 +19,46 @@ use Illuminate\Support\Arr;
  */
 class RecLst4User
 {
-    public static function execute(User $user, array $query = []): LengthAwarePaginator
+    public static function execute($userId, $userType, array $query = [])
     {
-        return Recommendation::query()
-            ->where('recommended_to_user_id', $user->id)
-            // in our database, user table is soft deleted
-            // when you get the recommendation list, even though the user is deleted still
-            // it would include that user id in the result. To make sure that it doesn't
-            // include that, add this has check
-            ->has('recommendedUser')
-            ->with('recommendedUser:id,first_name,last_name,first_name_cana,last_name_cana,email,dob')
+        $recommendations = Recommendation::query()
+            ->where('recommended_to_user_id', $userId)
             ->latest()
-            ->paginate(
-                perPage: Arr::get($query, 'per_page', 15),
-                page: Arr::get($query, 'page', 1)
-            );
+            ->get();
+    
+        $userIds = $recommendations->pluck('recommended_user_id')->toArray();
+    
+        $applicationStatus = new ApplicationStatus();
+        $applicationStatuses = $applicationStatus->processApplications($userId, $userIds);
+    
+        $recommendations = $recommendations->map(function ($recommendation) use ($applicationStatuses, $userType) {
+            $userId = $recommendation->recommended_user_id;
+            $applicationStatus = $applicationStatuses->firstWhere('other_user_id', $userId);
+    
+            $recommendedUser = null;
+            if ($userType === 'entrepreneur') {
+                $recommendedUser = FounderProfile::select('id', 'company_name', 'no_of_employees', 'is_listed_company', 'area_id', 'offered_income_range_id')
+                    ->with(['area', 'industries', 'offeredIncome'])
+                    ->find($userId);
+            } elseif ($userType === 'founder') {
+                $recommendedUser = User::where('type', User::ENTR)
+                    ->with([
+                        'income',
+                        'entrProfile' => function ($query) {
+                            $query->select('id', 'user_id', 'area_id')->with(['area', 'industriesPfd', 'positionsPfd']);
+                        }
+                    ])
+                    ->select('users.id', 'users.first_name', 'income_range_id', DB::raw("date_part('year',age(users.dob)) AS age"))
+                    ->find($userId);
+            }
+    
+            $recommendation->recommended_user = $recommendedUser;
+            $recommendation->application_status = $applicationStatus;
+    
+            return $recommendation;
+        });
+    
+        return $recommendations;
     }
+    
 }

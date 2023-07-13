@@ -128,23 +128,24 @@ class ApplicationController extends BaseApiController
                 $userId = $founderProfile->id;
             }
 
-            $otherUserModel = EntrepreneurProfile::class;
             $otherUserIdColumn = 'applied_by_user_id';
+            $otherUserDetails = User::where('type', User::ENTR)
+                ->with([
+                    'income',
+                    'entrProfile' => function ($query) {
+                        $query->select('id', 'user_id', 'area_id')->with(['area','industriesPfd','positionsPfd']);
+                    }
+                ])
+                ->select('users.id', 'users.first_name', 'income_range_id', DB::raw("date_part('year',age(users.dob)) AS age"))
+                ->orderBy('users.created_at', 'desc')
+                ->get();
+        } elseif ($user->type == "entrepreneur") {
+            $otherUserIdColumn = 'applied_to_user_id';
             $otherUserDetails = FounderProfile::select('id', 'company_name', 'no_of_employees', 'is_listed_company', 'area_id', 'offered_income_range_id')
                 ->with(['area', 'industries', 'offeredIncome'])
                 ->orderBy('created_at', 'desc')
                 ->get();
-        } elseif ($user->type == "entrepreneur") {
-            $otherUserModel = FounderProfile::class;
-            $otherUserIdColumn = 'applied_to_user_id';
-            $otherUserDetails = User::where('type', User::ENTR)
-                ->with(['entrProfile' => function ($query) {
-                    $query->select('id', 'user_id', 'area_id', 'present_post_id');
-                }, 'entrProfile.area:id,name_ja', 'entrProfile.industriesPfd:id,name', 'entrProfile.positionsPfd:id,name'])
-                ->leftjoin('income_ranges', 'users.income_range_id', '=', 'income_ranges.id')
-                ->select('users.id', 'users.first_name', 'income_ranges.upper_limit', DB::raw("date_part('year',age(users.dob)) AS age"))
-                ->orderBy('users.created_at', 'desc')
-                ->get();
+        
         } else {
             return response()->json(['message' => 'Invalid user type'], 400);
         }
@@ -154,7 +155,7 @@ class ApplicationController extends BaseApiController
                 DB::raw("CASE
                     WHEN applied_to_user_id = $userId THEN 'received'
                     WHEN applied_by_user_id = $userId THEN 'applied'
-                    ELSE ''
+                    ELSE ''::varchar
                 END AS type"),
                 DB::raw("CASE
                     WHEN accepted_at IS NOT NULL THEN 'accepted'
@@ -162,7 +163,11 @@ class ApplicationController extends BaseApiController
                     ELSE 'pending'
                 END AS status"),
                 'applications.id',
-                $otherUserIdColumn.' AS other_user_id',
+                DB::raw("CASE
+                    WHEN applied_to_user_id = $userId THEN applied_by_user_id::varchar
+                    WHEN applied_by_user_id = $userId THEN applied_to_user_id::varchar
+                    ELSE ''::varchar
+                END AS other_user_id"),
                 'founder_NDA',
                 'entrepreneur_NDA',
                 'negotiations',
@@ -174,7 +179,8 @@ class ApplicationController extends BaseApiController
             })
             ->get();
 
-        $applicationsWithOtherUser = $applications->map(function ($application) use ($otherUserModel, $otherUserDetails) {
+
+        $applicationsWithOtherUser = $applications->map(function ($application) use ($otherUserDetails) {
             $otherUser = $otherUserDetails->firstWhere('id', $application->other_user_id);
             $application->other_user = $otherUser;
             unset($application->other_user_id);

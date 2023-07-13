@@ -18,6 +18,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use App\Models\FounderProfile;
 
 /**
  * @group Recommendation
@@ -66,13 +67,21 @@ class RecommendController extends BaseApiController
      * This will return the list of users recommended to one user
      * Can be accessed by the user side
      * @param RecList4UserReq $request
-     * @return AnonymousResourceCollection
      */
-    public function recList4User(RecList4UserReq $request): AnonymousResourceCollection
+    public function recList4User(RecList4UserReq $request)
     {
         /**@var User $user */
         $user = auth()->user();
-        return RecommendationResource::collection(RecLst4User::execute($user, $request->all()));
+        $userId = $user->id;
+        if($user->type == User::FOUNDER){
+            $founderProfile = FounderProfile::join('founder_user', 'founder_profiles.id', '=', 'founder_user.founder_id')
+                ->where('founder_user.user_id', $user->id)
+                ->first();
+            $userId = $founderProfile->id;
+        }
+
+        $recommendations = RecLst4User::execute($userId, $user->type, $request->all());
+        return $recommendations;
     }
 
     /**
